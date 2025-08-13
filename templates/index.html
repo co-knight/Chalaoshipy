@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}查老师离线版{% endblock %}
+
+{% block content %}
+<div class="container">
+    <header>
+        <h1 style="color:#0056b3;">查老师离线版</h1>
+        <p>输入教师姓名、全拼或拼音首字母进行搜索</p>
+    </header>
+
+    <div class="search-container">
+        <input type="text" id="teacherSearch" placeholder="搜索教师..." autocomplete="off">
+        <div id="suggestions" class="suggestions-container"></div>
+    </div>
+
+    <div class="main-content">
+        <p>欢迎使用查老师离线版。您可以通过上方的搜索框查找教师</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('teacherSearch');
+    const suggestionsContainer = document.getElementById('suggestions');
+
+    // --- 搜索建议功能 ---
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+
+        if (query.length < 1) {
+            suggestionsContainer.innerHTML = '';
+            suggestionsContainer.style.display = 'none';
+            return;
+        }
+
+        // 向后端API发送请求
+        fetch(`/api/search?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                suggestionsContainer.innerHTML = ''; // 清空旧建议
+                if (data.length > 0) {
+                    data.forEach(teacher => {
+                        const suggestionItem = document.createElement('a');
+                        suggestionItem.href = `/teacher/${teacher.姓名}`;
+                        suggestionItem.classList.add('suggestion-item');
+                        
+                        suggestionItem.innerHTML = `
+                            <div class="suggestion-left">
+                                <span class="teacher-name">${teacher.姓名}</span>
+                                <span class="teacher-dept">${teacher.学院}</span>
+                            </div>
+                            <div class="suggestion-right">
+                                <span class="teacher-score">${teacher.评分_display}</span>
+                            </div>
+                        `;
+                        suggestionsContainer.appendChild(suggestionItem);
+                    });
+                    suggestionsContainer.style.display = 'block';
+                } else {
+                    suggestionsContainer.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('搜索建议加载失败:', error);
+                suggestionsContainer.style.display = 'none';
+            });
+    });
+
+    // 点击页面其他地方，隐藏建议框
+    document.addEventListener('click', function(e) {
+        if (!suggestionsContainer.contains(e.target) && e.target !== searchInput) {
+            suggestionsContainer.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

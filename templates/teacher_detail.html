@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}{{ teacher_name }} - 教师详情{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="teacher-details">
+        
+        <!-- 返回链接 -->
+        <a href="{{ url_for('index') }}" class="back-link">&larr; 返回首页</a>
+
+        <!-- 教师姓名标题 -->
+        <h1>{{ teacher_name }}</h1>
+
+        <!-- 教师信息网格 -->
+        <div class="teacher-info-grid">
+            <div class="info-item">
+                <span class="info-label">学院</span>
+                <span class="info-value">{{ teacher_info.学院 }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">综合评分</span>
+                <span class="info-value score">{{ "%.2f"|format(teacher_info.评分) if teacher_info.评分 else "N/A" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">评分人数</span>
+                <span class="info-value">{{ teacher_info.评分人数 }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">热度</span>
+                <span class="info-value hot">{{ teacher_info.热度 }}</span>
+            </div>
+        </div>
+
+        <!-- 绩点信息 -->
+        {% if gpa_data %}
+            <div class="gpa-section">
+                <h2>相关课程绩点</h2>
+                <table class="gpa-table">
+                    <thead>
+                        <tr>
+                            <th>课程名称</th>
+                            <th>平均GPA</th>
+                            <th>总人数</th>
+                            <th>优秀率</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for course in gpa_data %}
+                        <tr>
+                            <td>{{ course[0] }}</td>
+                            <td>{{ course[1] }}</td>
+                            <td>{{ course[2] }}</td>
+                            <td>{{ course[3] }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        <!-- 评价列表 -->
+        <div class="comment-list">
+            <h2>
+                学生评价
+                <div class="sort-options">
+                    <a href="{{ url_for('teacher_detail', teacher_name=teacher_name, sort_by='likes') }}">按热度</a>
+                    <a href="{{ url_for('teacher_detail', teacher_name=teacher_name, sort_by='time') }}">按时间</a>
+                </div>
+            </h2>
+            
+            {% for comment in comments %}
+                <div class="comment-item">
+                    <p class="comment-content">{{ comment.内容 }}</p>
+                    <div class="comment-meta">
+                        <span class="likes">热度: {{ comment['点赞减去点踩数量'] }}</span>
+                        <span>发布时间: {{ comment.发表时间.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                </div>
+            {% else %}
+                <p>暂无对该教师的评价。</p>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}
