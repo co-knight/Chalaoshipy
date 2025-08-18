@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container">
-    <div class="teacher-details">
+    <div class="teacher-details" data-teacher-name="{{ teacher_name }}" data-detail-url-template="{{ url_for('teacher_detail', teacher_name='__NAME__') }}">
         
         <!-- 返回链接 -->
         <a href="{{ url_for('index') }}" class="back-link">&larr; 返回首页</a>
@@ -42,14 +42,38 @@
                             <th>课程名称</th>
                             <th>平均GPA±标准差</th>
                             <th>总人数</th>
+                            <th>对比</th>
                         </tr>
                     </thead>
                     <tbody>
                     {% for course in gpa_data %}
-                        <tr>
-                            <td>{{ course[0] }}</td>
+                        <tr class="course-row" data-course-name="{{ course[0] }}">
+                            <td class="course-name">{{ course[0] }}</td>
                             <td>{{ course[1] }}±{{ course[3] }}</td>
                             <td>{{ course[2] }}</td>
+                            <td><button class="toggle-compare" data-course-name="{{ course[0] }}">展开</button></td>
+                        </tr>
+                        <tr class="compare-row" data-course-name="{{ course[0] }}">
+                            <td colspan="4">
+                                <div class="compare-container">
+                                    <div class="compare-loading">加载中...</div>
+                                    <div class="compare-error">加载失败，请重试。</div>
+                                    <table class="compare-table">
+                                        <thead>
+                                            <tr>
+                                                <th>教师</th>
+                                                <th>学院</th>
+                                                <th>综合评分</th>
+                                                <th>评分人数</th>
+                                                <th>热度</th>
+                                                <th>平均GPA±标准差</th>
+                                                <th>总人数</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </td>
                         </tr>
                     {% endfor %}
                     </tbody>
@@ -89,4 +113,133 @@
         </svg>
     </button>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const containerEl = document.querySelector('.teacher-details');
+    const teacherName = containerEl?.dataset.teacherName || '';
+    const detailUrlTemplate = containerEl?.dataset.detailUrlTemplate || '/teacher/__NAME__';
+
+    function formatNumber(n) {
+        if (n === null || n === undefined) return 'N/A';
+        return n;
+    }
+
+    function formatRating(r) {
+        if (r === null || r === undefined || isNaN(r)) return 'N/A';
+        return Number(r).toFixed(1);
+    }
+
+    function renderRows(tbody, data) {
+        tbody.innerHTML = '';
+        if (!data || data.length === 0) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 7;
+            td.textContent = '暂无其他老师该课程的数据。';
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+            return;
+        }
+        data.forEach(item => {
+            const tr = document.createElement('tr');
+            const tdTeacher = document.createElement('td');
+            const a = document.createElement('a');
+            a.href = detailUrlTemplate.replace('__NAME__', encodeURIComponent(item.teacher));
+            a.className = 'teacher-link';
+            a.textContent = item.teacher;
+            tdTeacher.appendChild(a);
+            tr.appendChild(tdTeacher);
+
+            const tdCollege = document.createElement('td');
+            tdCollege.textContent = item.college || '—';
+            tr.appendChild(tdCollege);
+
+            const tdRating = document.createElement('td');
+            tdRating.textContent = formatRating(item.rating);
+            tr.appendChild(tdRating);
+
+            const tdCount = document.createElement('td');
+            tdCount.textContent = formatNumber(item.rating_count);
+            tr.appendChild(tdCount);
+
+            const tdHot = document.createElement('td');
+            tdHot.textContent = formatNumber(item.hot);
+            tr.appendChild(tdHot);
+
+            const tdGpa = document.createElement('td');
+            const gNum = (item.avg_gpa != null ? Number(item.avg_gpa) : null);
+            const sNum = (item.std_gpa != null ? Number(item.std_gpa) : null);
+            let gpaClass = 'gpa-mid';
+            if (gNum != null) {
+                if (gNum >= 3.5) gpaClass = 'gpa-high';
+                else if (gNum < 3.0) gpaClass = 'gpa-low';
+            }
+            const gStr = (gNum != null ? gNum.toFixed(2) : 'N/A');
+            const sStr = (sNum != null ? sNum.toFixed(2) : 'N/A');
+            tdGpa.innerHTML = '<span class="gpa-value ' + gpaClass + '">' + gStr + '±' + sStr + '</span>';
+            tr.appendChild(tdGpa);
+
+            const tdTotal = document.createElement('td');
+            tdTotal.textContent = formatNumber(item.total_count);
+            tr.appendChild(tdTotal);
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    function toggleCompare(courseName, buttonEl) {
+        const compareRow = document.querySelector('tr.compare-row[data-course-name="' + courseName + '"]');
+        if (!compareRow) return;
+        const isHidden = compareRow.style.display === 'none' || compareRow.style.display === '';
+        if (!isHidden) {
+            compareRow.style.display = 'none';
+            if (buttonEl) buttonEl.textContent = '展开';
+            return;
+        }
+
+        compareRow.style.display = 'table-row';
+        if (buttonEl) buttonEl.textContent = '收起';
+
+        const loading = compareRow.querySelector('.compare-loading');
+        const error = compareRow.querySelector('.compare-error');
+        const tbody = compareRow.querySelector('tbody');
+
+        loading.style.display = 'block';
+        error.style.display = 'none';
+        tbody.innerHTML = '';
+
+        const params = new URLSearchParams({ course: courseName, exclude: teacherName });
+        fetch('/api/course_teachers?' + params.toString())
+            .then(r => {
+                if (!r.ok) throw new Error('Network response was not ok');
+                return r.json();
+            })
+            .then(data => {
+                renderRows(tbody, data);
+            })
+            .catch(() => {
+                error.style.display = 'block';
+            })
+            .finally(() => {
+                loading.style.display = 'none';
+            });
+    }
+
+    document.querySelectorAll('.toggle-compare').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            const name = this.getAttribute('data-course-name');
+            toggleCompare(name, this);
+        });
+    });
+
+    document.querySelectorAll('.course-name').forEach(cell => {
+        cell.addEventListener('click', function () {
+            const name = this.parentElement.getAttribute('data-course-name');
+            const btn = this.parentElement.querySelector('.toggle-compare');
+            toggleCompare(name, btn);
+        });
+    });
+
+});
+</script>
 {% endblock %}

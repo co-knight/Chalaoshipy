@@ -9,6 +9,9 @@
     --score-green: #28a745;
     --white-color: #fff;
     --link-color: #0056b3;
+    --text-secondary: #4b5563;
+    --success-color: #16a34a;
+    --danger-color: #dc2626;
 }
 
 body {
@@ -188,6 +191,22 @@ h2 {
 .gpa-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
 .gpa-table th, .gpa-table td { border: 1px solid var(--border-color); padding: 12px; text-align: left; }
 .gpa-table th { background-color: var(--secondary-blue); font-weight: 600; }
+.gpa-table .course-name { color: var(--link-color); cursor: pointer; }
+
+.compare-table { width: 100%; border-collapse: collapse; }
+.compare-table th { text-align: left; color: var(--text-secondary); font-weight: 600; }
+.compare-table td, .compare-table th { padding: 8px 10px; border-top: 1px solid var(--border-color); }
+.compare-table a.teacher-link { color: var(--text-secondary); font-weight: 500; text-decoration: none; }
+.compare-table a.teacher-link:hover { color: var(--link-color); text-decoration: underline; }
+.gpa-value { font-weight: 700; }
+.gpa-high { color: var(--success-color); }
+.gpa-mid { color: var(--link-color); }
+.gpa-low { color: var(--danger-color); }
+.toggle-compare { background: transparent; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 10px; color: var(--text-secondary); cursor: pointer; }
+.toggle-compare:hover { border-color: var(--link-color); color: var(--link-color); }
+.compare-row { display: none; }
+.compare-container .compare-loading { display: none; }
+.compare-container .compare-error { display: none; color: #c00; }
 
 .footer {
     margin-top: auto;

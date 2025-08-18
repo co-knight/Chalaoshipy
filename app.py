@@ -41,6 +41,36 @@ app.config.from_object(Config)
 
 TEACHERS_DF, COMMENTS_DF, GPA_DATA = load_data()
 
+def to_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+def to_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+COURSE_TO_TEACHERS = {}
+for teacher_name_key, courses in GPA_DATA.items():
+    for course_entry in courses:
+        if not course_entry:
+            continue
+        course_name = course_entry[0] if len(course_entry) > 0 else None
+        if not course_name:
+            continue
+        avg_gpa = to_float(course_entry[1] if len(course_entry) > 1 else None)
+        total_count = to_int(course_entry[2] if len(course_entry) > 2 else None)
+        std_gpa = to_float(course_entry[3] if len(course_entry) > 3 else None)
+        COURSE_TO_TEACHERS.setdefault(course_name, []).append({
+            'teacher': teacher_name_key,
+            'avg_gpa': avg_gpa,
+            'std_gpa': std_gpa,
+            'total_count': total_count
+        })
+
 if not app.debug:
     if not os.path.exists('logs'):
         os.mkdir('logs')
@@ -107,3 +137,51 @@ def api_search():
     results['评分_display'] = results['评分_numeric'].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "N/A")
     search_results = results[['姓名', '学院', '评分_display']].to_dict('records')
     return jsonify(search_results)
+
+@app.route('/api/course_teachers')
+def api_course_teachers():
+    course_name = request.args.get('course', '')
+    exclude_teacher = request.args.get('exclude', '')
+    if not course_name:
+        return jsonify([])
+
+    entries = COURSE_TO_TEACHERS.get(course_name, [])
+    result = []
+    for entry in entries:
+        teacher_name_val = entry.get('teacher')
+        if exclude_teacher and teacher_name_val == exclude_teacher:
+            continue
+
+        college = None
+        rating = None
+        rating_count = None
+        hot = None
+
+        row = TEACHERS_DF[TEACHERS_DF['姓名'] == teacher_name_val]
+        if not row.empty:
+            r = row.iloc[0]
+            college = r.get('学院') if '学院' in r else None
+            rating = r.get('评分_numeric') if '评分_numeric' in r else None
+            rating = float(rating) if pd.notna(rating) else None
+            rating_count = to_int(r.get('评分人数') if '评分人数' in r else None)
+            hot = to_int(r.get('热度') if '热度' in r else None)
+
+        result.append({
+            'teacher': teacher_name_val,
+            'college': college,
+            'rating': rating,
+            'rating_count': rating_count,
+            'hot': hot,
+            'avg_gpa': entry.get('avg_gpa'),
+            'std_gpa': entry.get('std_gpa'),
+            'total_count': entry.get('total_count')
+        })
+
+    def sort_key(x):
+        avg = x['avg_gpa'] if x['avg_gpa'] is not None else float('-inf')
+        rate = x['rating'] if x['rating'] is not None else float('-inf')
+        total = x['total_count'] if x['total_count'] is not None else float('-inf')
+        return (avg, rate, total)
+
+    result.sort(key=sort_key, reverse=True)
+    return jsonify(result)
