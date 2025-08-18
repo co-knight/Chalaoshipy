@@ -47,3 +47,7 @@ gunicorn --workers 4 --bind 0.0.0.0:5000 app:app
 - [ ] 数据更新时间
 - [x] 自动读取压缩包解压
 - [ ] Docker部署
+
+### 感谢
+
+本项目登录功能参考了qxdn 的乐园 的 https://qianxu.run/cc98sign/index.html 的实现，该文章受CC BY-NC-SA 4.0保护。

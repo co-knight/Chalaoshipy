@@ -10,12 +10,15 @@
     </header>
 
     <div class="search-container">
-        <input type="text" id="teacherSearch" placeholder="搜索教师..." autocomplete="off">
+        <input type="text" id="teacherSearch" placeholder="示例：张三\zhangsan\zs" autocomplete="off">
         <div id="suggestions" class="suggestions-container"></div>
     </div>
 
     <div class="main-content">
         <p>欢迎使用查老师离线版。您可以通过上方的搜索框查找教师</p>
+    </div>
+    <div class="main-content">
+        <p>本项目数据来源于<a href="https://github.com/zjuchalaoshi/chalaoshi" target="_blank" rel="noopener noreferrer">查老师公开数据</a></p>
     </div>
 </div>
 {% endblock %}
@@ -26,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('teacherSearch');
     const suggestionsContainer = document.getElementById('suggestions');
 
-    // --- 搜索建议功能 ---
+    // --- 搜索建议 ---
     searchInput.addEventListener('input', function() {
         const query = this.value.trim();
 
@@ -36,7 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // 向后端API发送请求
         fetch(`/api/search?q=${encodeURIComponent(query)}`)
             .then(response => response.json())
             .then(data => {

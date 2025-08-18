@@ -17,6 +17,13 @@ body {
     margin: 0;
     background-color: var(--background-color);
     color: var(--text-color);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
 }
 
 .container {
@@ -181,3 +188,94 @@ h2 {
 .gpa-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
 .gpa-table th, .gpa-table td { border: 1px solid var(--border-color); padding: 12px; text-align: left; }
 .gpa-table th { background-color: var(--secondary-blue); font-weight: 600; }
+
+.footer {
+    margin-top: auto;
+    padding: 20px 0;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    background-color: var(--background-color);
+}
+
+.footer-content {
+    color: var(--light-text-color);
+    font-size: 0.9em;
+}
+
+.footer-content p {
+    margin: 0;
+}
+
+.github-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--link-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.github-link:hover {
+    color: #003d82;
+}
+
+.github-icon {
+    flex-shrink: 0;
+}
+
+/* 返回顶部按钮样式 */
+.back-to-top {
+    position: fixed;
+    top: 95%;
+    right: calc((100vw - 900px) / 2 - 90px);
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    background-color: var(--primary-blue);
+    color: var(--white-color);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.back-to-top:hover {
+    background-color: #0056b3;
+    transform: translateY(-50%) translateX(-5px);
+    box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
+}
+
+.back-to-top:active {
+    transform: translateY(-50%) translateX(0);
+}
+
+.back-to-top svg {
+    transition: transform 0.2s ease;
+}
+
+.back-to-top:hover svg {
+    transform: translateY(-1px);
+}
+
+@media (max-width: 1000px) {
+    .back-to-top {
+        right: 20px;
+        top: auto;
+        bottom: 30px;
+        transform: none;
+    }
+    
+    .back-to-top:hover {
+        transform: translateY(-2px);
+    }
+    
+    .back-to-top:active {
+        transform: translateY(0);
+    }
+}
