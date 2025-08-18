@@ -1,0 +1,13 @@
+# Docker and Git
+Dockerfile
+.dockerignore
+.git
+.gitignore
+
+# Python cache
+__pycache__/
+
+# Local data and logs (data will be mounted as a volume)
+data/
+logs/
+*.zip

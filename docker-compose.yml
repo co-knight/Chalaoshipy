@@ -1,0 +1,22 @@
+services:
+  app:
+    image: coknight/chalaoshipy:latest
+    container_name: chalaoshi-web
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "5000:5000"
+    volumes:
+      - chalaoshi-data:/app/data
+    depends_on:
+      - updater
+
+  updater:
+    image: coknight/chalaoshipy:updater
+    container_name: chalaoshi-updater
+    volumes:
+      - chalaoshi-data:/app/data
+
+volumes:
+  chalaoshi-data:

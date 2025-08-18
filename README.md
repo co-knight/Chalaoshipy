@@ -2,7 +2,7 @@
 
 基于Gunicorn的查老师离线版，使用[查老师](https://github.com/zjuchalaoshi/chalaoshi)的公开静态数据。
 
-## 数据说明
+## 命令行启动
 
 ### 手动添加数据
 
@@ -24,7 +24,7 @@ python update_data.py --update
 
 请不要高强度通过这个url访问，这会增加98服务器的负担，还可能会被CC98论坛封禁。
 
-## 启动说明
+### 启动说明
 
 Gunicorn 不能在 Windows 上运行，请考虑使用 Linux 或 WSL。
 
@@ -42,11 +42,43 @@ pip install -r requirements.txt
 gunicorn --workers 4 --bind 0.0.0.0:5000 app:app
 ```
 
+## Docker部署
+
+请您在文件夹中按照[docker-compose.yml](docker-compose.yml) 创建一个 `docker-compose.yml` 以及 `.env` 文件。然后执行下面的命令。
+
+### 更新数据
+
+```bash
+docker compose run --rm -v "$(pwd):/app" updater
+```
+
+这会启动 `updater` 以更新卷内服务相关数据。我们默认`data.zip` 在 `pwd` 下，所以临时挂载了这个路径，您可以按照您自己的需求自行修改挂载路径，但是请确保zip文件在该目录下。
+
+### 设置环境变量
+
+默认环境变量是同目录下的 `.env` 里的 `SECRET_KEY` ，它将作为 `gunicorn` 的运行密钥，您可以使用 `python3 -c 'import secrets; print(secrets.token_hex(24))'` 生成一个密钥作为其值。
+
+### 启动Web
+
+```bash
+docker compose up -d
+```
+
+### 关闭以及更新
+
+```bash
+docker compose down
+```
+
+更新数据可以通过再次执行 `docker compose run --rm -v "$(pwd):/app" updater` 来更新，然后重启服务。
+
+更多内容请参考[docker-compose.yml](docker-compose.yml)
+
 ### 计划中的增加内容
 
 - [ ] 数据更新时间
 - [x] 自动读取压缩包解压
-- [ ] Docker部署
+- [x] Docker部署
 
 ### 感谢
 
