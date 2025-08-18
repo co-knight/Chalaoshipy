@@ -10,7 +10,7 @@
 
 ### 使用py程序加载数据
 
-您需要的获取到的`zip`文件放在与`update_data.py`同目录下，然后运行：
+您需要将获取到的`zip`文件放在与`update_data.py`同目录下，然后运行：
 
 ```bash
 python update_data.py --update

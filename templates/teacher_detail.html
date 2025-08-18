@@ -40,18 +40,16 @@
                     <thead>
                         <tr>
                             <th>课程名称</th>
-                            <th>平均GPA</th>
+                            <th>平均GPA±标准差</th>
                             <th>总人数</th>
-                            <th>优秀率</th>
                         </tr>
                     </thead>
                     <tbody>
                     {% for course in gpa_data %}
                         <tr>
                             <td>{{ course[0] }}</td>
-                            <td>{{ course[1] }}</td>
+                            <td>{{ course[1] }}±{{ course[3] }}</td>
                             <td>{{ course[2] }}</td>
-                            <td>{{ course[3] }}</td>
                         </tr>
                     {% endfor %}
                     </tbody>
