@@ -5,6 +5,8 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, request, abort, jsonify
+import time
+from functools import lru_cache
 
 from config import Config
 
@@ -40,6 +42,28 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 TEACHERS_DF, COMMENTS_DF, GPA_DATA = load_data()
+
+TEACHERS_DF['search_blob'] = (
+    TEACHERS_DF['姓名_lower'].astype(str) + '|' +
+    TEACHERS_DF['全拼_lower'].astype(str) + '|' +
+    TEACHERS_DF['首字母_lower'].astype(str)
+)
+
+def _normalize_q(q: str) -> str:
+    return (q or '').strip().lower()
+
+@lru_cache(maxsize=1024)
+def _search_core(q_norm: str, limit: int):
+    if not q_norm:
+        return []
+    mask = TEACHERS_DF['search_blob'].str.contains(q_norm, na=False, regex=False)
+    if not mask.any():
+        return []
+    df_top = TEACHERS_DF.loc[mask, ['姓名', '学院', '评分_numeric']]
+    df_top = df_top.nlargest(limit, '评分_numeric')
+    df_top = df_top.copy()
+    df_top['评分_display'] = df_top['评分_numeric'].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "N/A")
+    return df_top[['姓名', '学院', '评分_display']].to_dict('records')
 
 def to_float(value):
     try:
@@ -124,19 +148,24 @@ def teacher_detail(teacher_name):
 
 @app.route('/api/search')
 def api_search():
-    query = request.args.get('q', '').lower()
-    if not query:
+    t0 = time.perf_counter()
+    q_raw = request.args.get('q', '')
+    q_norm = _normalize_q(q_raw)[:64]
+    if not q_norm:
         return jsonify([])
+    try:
+        limit_param = int(request.args.get('limit', 10))
+    except (TypeError, ValueError):
+        limit_param = 10
+    limit = min(max(limit_param, 1), 25)
 
-    mask = (
-        TEACHERS_DF['姓名_lower'].str.contains(query, na=False) |
-        TEACHERS_DF['全拼_lower'].str.contains(query, na=False) |
-        TEACHERS_DF['首字母_lower'].str.contains(query, na=False)
-    )
-    results = TEACHERS_DF[mask].sort_values(by='评分_numeric', ascending=False, na_position='last').head(10)
-    results['评分_display'] = results['评分_numeric'].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "N/A")
-    search_results = results[['姓名', '学院', '评分_display']].to_dict('records')
-    return jsonify(search_results)
+    result = _search_core(q_norm, limit)
+    dur_ms = (time.perf_counter() - t0) * 1000
+    try:
+        app.logger.info(f"/api/search q='{q_norm[:32]}' limit={limit} hits={len(result)} dur_ms={dur_ms:.1f}")
+    except Exception:
+        pass
+    return jsonify(result)
 
 @app.route('/api/course_teachers')
 def api_course_teachers():
