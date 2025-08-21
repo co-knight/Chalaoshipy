@@ -49,10 +49,10 @@ gunicorn --workers 4 --bind 0.0.0.0:5000 app:app
 ### 更新数据
 
 ```bash
-docker compose run --rm -v "$(pwd):/app" updater
+docker compose run --rm -v "$(pwd)/data.zip:/app/data.zip" updater
 ```
 
-这会启动 `updater` 以更新卷内服务相关数据。我们默认`data.zip` 在 `pwd` 下，所以临时挂载了这个路径，您可以按照您自己的需求自行修改挂载路径，但是请确保zip文件在该目录下。
+这会启动 `updater` 以更新卷内服务相关数据。我们默认`data.zip` 在 `pwd` 下，所以临时挂载了这个路径，您可以按照您自己的需求自行修改挂载路径，但是请确保zip文件路径正确，否则docker会默认生成一个空文件夹。
 
 ### 设置环境变量
 
@@ -70,7 +70,7 @@ docker compose up -d
 docker compose down
 ```
 
-更新数据可以通过再次执行 `docker compose run --rm -v "$(pwd):/app" updater` 来更新，然后重启服务。
+更新数据可以通过再次执行 `docker compose run --rm -v "$(pwd)/data.zip:/app/data.zip" updater` 来更新，然后重启服务。
 
 更多内容请参考[docker-compose.yml](docker-compose.yml)
 
