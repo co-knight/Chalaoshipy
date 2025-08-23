@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container">
-    <div class="teacher-details" data-teacher-name="{{ teacher_name }}" data-detail-url-template="{{ url_for('teacher_detail', teacher_name='__NAME__') }}">
+            <div class="teacher-details" data-teacher-name="{{ teacher_name }}" data-detail-url-template="{{ url_for('teacher_detail', teacher_id=teacher_info.id) }}">
         
         <!-- 返回链接 -->
         <a href="{{ url_for('index') }}" class="back-link">&larr; 返回首页</a>
@@ -54,7 +54,7 @@
                             <td><button class="toggle-compare" data-course-name="{{ course[0] }}">展开</button></td>
                         </tr>
                         <tr class="compare-row" data-course-name="{{ course[0] }}">
-                            <td colspan="4">
+                            <td colspan="7">
                                 <div class="compare-container">
                                     <div class="compare-loading">加载中...</div>
                                     <div class="compare-error">加载失败，请重试。</div>
@@ -86,8 +86,8 @@
             <h2>
                 学生评价
                 <div class="sort-options">
-                    <a href="{{ url_for('teacher_detail', teacher_name=teacher_name, sort_by='likes') }}">按热度</a>
-                    <a href="{{ url_for('teacher_detail', teacher_name=teacher_name, sort_by='time') }}">按时间</a>
+                    <a href="{{ url_for('teacher_detail', teacher_id=teacher_info.id, sort_by='likes') }}">按热度</a>
+                    <a href="{{ url_for('teacher_detail', teacher_id=teacher_info.id, sort_by='time') }}">按时间</a>
                 </div>
             </h2>
             
@@ -117,7 +117,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     const containerEl = document.querySelector('.teacher-details');
     const teacherName = containerEl?.dataset.teacherName || '';
-    const detailUrlTemplate = containerEl?.dataset.detailUrlTemplate || '/teacher/__NAME__';
+    const detailUrlTemplate = containerEl?.dataset.detailUrlTemplate || '';
 
     function formatNumber(n) {
         if (n === null || n === undefined) return 'N/A';
@@ -144,7 +144,13 @@ document.addEventListener('DOMContentLoaded', function () {
             const tr = document.createElement('tr');
             const tdTeacher = document.createElement('td');
             const a = document.createElement('a');
-            a.href = detailUrlTemplate.replace('__NAME__', encodeURIComponent(item.teacher));
+            if (item.teacher_id) {
+                a.href = '/t/' + item.teacher_id;
+            } else {
+                // 把教师姓名作为备用方案
+                a.href = '/t/' + encodeURIComponent(item.teacher);
+            }
+            
             a.className = 'teacher-link';
             a.textContent = item.teacher;
             tdTeacher.appendChild(a);

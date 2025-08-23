@@ -59,11 +59,17 @@ def _search_core(q_norm: str, limit: int):
     mask = TEACHERS_DF['search_blob'].str.contains(q_norm, na=False, regex=False)
     if not mask.any():
         return []
-    df_top = TEACHERS_DF.loc[mask, ['姓名', '学院', '评分_numeric']]
+    df_top = TEACHERS_DF.loc[mask, ['id', '姓名', '学院', '评分_numeric']]
     df_top = df_top.nlargest(limit, '评分_numeric')
     df_top = df_top.copy()
     df_top['评分_display'] = df_top['评分_numeric'].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "N/A")
-    return df_top[['姓名', '学院', '评分_display']].to_dict('records')
+    
+    result = df_top[['id', '姓名', '学院', '评分_display']].to_dict('records')
+    for item in result:
+        if 'id' in item and item['id'] is not None:
+            item['id'] = int(item['id'])
+    
+    return result
 
 def to_float(value):
     try:
@@ -112,13 +118,14 @@ if not app.debug:
 def index():
     return render_template('index.html')
 
-@app.route('/teacher/<teacher_name>')
-def teacher_detail(teacher_name):
-    teacher_info_row = TEACHERS_DF[TEACHERS_DF['姓名'] == teacher_name]
+@app.route('/t/<int:teacher_id>')
+def teacher_detail(teacher_id):
+    teacher_info_row = TEACHERS_DF[TEACHERS_DF['id'] == teacher_id]
     if teacher_info_row.empty:
-        app.logger.warning(f"尝试访问不存在的教师: {teacher_name}")
+        app.logger.warning(f"尝试访问不存在的教师ID: {teacher_id}")
         abort(404)
     teacher_info = teacher_info_row.iloc[0]
+    teacher_name = teacher_info['姓名']
 
     comments = COMMENTS_DF[COMMENTS_DF['老师姓名'] == teacher_name]
     sort_by = request.args.get('sort_by', 'likes')
@@ -185,6 +192,7 @@ def api_course_teachers():
         rating = None
         rating_count = None
         hot = None
+        teacher_id = None
 
         row = TEACHERS_DF[TEACHERS_DF['姓名'] == teacher_name_val]
         if not row.empty:
@@ -194,16 +202,18 @@ def api_course_teachers():
             rating = float(rating) if pd.notna(rating) else None
             rating_count = to_int(r.get('评分人数') if '评分人数' in r else None)
             hot = to_int(r.get('热度') if '热度' in r else None)
+            teacher_id = int(r.get('id')) if 'id' in r else None
 
         result.append({
             'teacher': teacher_name_val,
-            'college': college,
-            'rating': rating,
-            'rating_count': rating_count,
-            'hot': hot,
-            'avg_gpa': entry.get('avg_gpa'),
-            'std_gpa': entry.get('std_gpa'),
-            'total_count': entry.get('total_count')
+            'teacher_id': teacher_id,
+            'college': str(college) if college is not None else None,
+            'rating': float(rating) if rating is not None else None,
+            'rating_count': int(rating_count) if rating_count is not None else None,
+            'hot': int(hot) if hot is not None else None,
+            'avg_gpa': float(entry.get('avg_gpa')) if entry.get('avg_gpa') is not None else None,
+            'std_gpa': float(entry.get('std_gpa')) if entry.get('std_gpa') is not None else None,
+            'total_count': int(entry.get('total_count')) if entry.get('total_count') is not None else None
         })
 
     def sort_key(x):

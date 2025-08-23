@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.length > 0) {
                     data.forEach(teacher => {
                         const suggestionItem = document.createElement('a');
-                        suggestionItem.href = `/teacher/${teacher.姓名}`;
+                        suggestionItem.href = `/t/${teacher.id}`;
                         suggestionItem.classList.add('suggestion-item');
                         
                         suggestionItem.innerHTML = `
