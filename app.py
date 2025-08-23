@@ -7,8 +7,26 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, request, abort, jsonify
 import time
 from functools import lru_cache
+import collections
 
 from config import Config
+
+# 限制内存中保留的日志条数，只显示最新的日志
+class LimitedMemoryHandler(logging.StreamHandler):
+    
+    def __init__(self, max_records=1000, stream=None):
+        super().__init__(stream)
+        self.max_records = max_records
+        self.records = collections.deque(maxlen=max_records)
+    
+    def emit(self, record):
+        self.records.append(record)
+        super().emit(record)
+    
+    def get_recent_logs(self, count=None):
+        if count is None:
+            count = self.max_records
+        return list(self.records)[-count:]
 
 def load_data():
     try:
@@ -104,11 +122,20 @@ for teacher_name_key, courses in GPA_DATA.items():
 if not app.debug:
     if not os.path.exists('logs'):
         os.mkdir('logs')
+    
+    # 文件保存所有日志，控制台只输出最新的1000条
     file_handler = RotatingFileHandler('logs/app.log', maxBytes=10240, backupCount=10)
     file_handler.setFormatter(logging.Formatter(
         '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
     file_handler.setLevel(logging.INFO)
+    
+    console_handler = LimitedMemoryHandler(max_records=1000)
+    console_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s'))
+    console_handler.setLevel(logging.INFO)
+    
     app.logger.addHandler(file_handler)
+    app.logger.addHandler(console_handler)
     
     app.logger.setLevel(logging.INFO)
     app.logger.info('应用启动')
